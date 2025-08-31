@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ExpenseEcho</string>
+    
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_transactions">Transactions</string>
+    <string name="nav_budget">Budget</string>
+    <string name="nav_debt">Debt</string>
+    <string name="nav_settings">Settings</string>
+    
+    <!-- Dashboard -->
+    <string name="dashboard_income">Income</string>
+    <string name="dashboard_expenses">Expenses</string>
+    <string name="dashboard_net">Net</string>
+    <string name="dashboard_savings">Savings</string>
+    <string name="dashboard_spending_by_category">Spending by Category</string>
+    
+    <!-- Transactions -->
+    <string name="transactions_search">Search transactions</string>
+    <string name="transactions_no_transactions">No transactions found</string>
+    <string name="transactions_no_transactions_subtitle">Transactions will appear here when SMS notifications are captured</string>
+    <string name="filter_all">All</string>
+    <string name="filter_income">Income</string>
+    <string name="filter_expense">Expense</string>
+    <string name="filter_transfer">Transfer</string>
+    
+    <!-- Budget -->
+    <string name="budget_total">Total Budget</string>
+    <string name="budget_remaining">Remaining</string>
+    <string name="budget_used_percentage">%1$d%% of budget used</string>
+    <string name="budget_set_category">Set Category Budget</string>
+    <string name="budget_no_budgets">No budgets set</string>
+    <string name="budget_no_budgets_subtitle">Set budgets for different categories to track your spending</string>
+    
+    <!-- Debt -->
+    <string name="debt_management">Debt Management</string>
+    <string name="debt_total">Total Debt</string>
+    <string name="debt_min_payment">Min Payment</string>
+    <string name="debt_add">Add Debt</string>
+    <string name="debt_avalanche">Debt Avalanche Strategy</string>
+    <string name="debt_avalanche_description">Pay minimum on all debts, then put extra money toward the debt with the highest interest rate first.</string>
+    <string name="debt_no_debts">No debts tracked</string>
+    <string name="debt_no_debts_subtitle">Add your credit cards and loans to track debt payoff progress</string>
+    
+    <!-- Settings -->
+    <string name="settings_sms_access">SMS Notification Access</string>
+    <string name="settings_sms_access_description">Enable notification access to automatically capture bank SMS messages and create transactions.</string>
+    <string name="settings_open_notification_settings">Open Notification Settings</string>
+    <string name="settings_privacy_security">Privacy &amp; Security</string>
+    <string name="settings_data_encryption">Data Encryption</string>
+    <string name="settings_data_encryption_subtitle">Your data is encrypted locally using SQLCipher</string>
+    <string name="settings_export_data">Export Data</string>
+    <string name="settings_export_data_subtitle">Create encrypted backup of your transactions</string>
+    <string name="settings_categorization">Categorization</string>
+    <string name="settings_manage_categories">Manage Categories</string>
+    <string name="settings_manage_categories_subtitle">Add, edit, or remove transaction categories</string>
+    <string name="settings_auto_rules">Auto-categorization Rules</string>
+    <string name="settings_auto_rules_subtitle">Set up keywords to automatically categorize transactions</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_app">About ExpenseEcho</string>
+    <string name="settings_about_app_subtitle">Version 1.0 - Local expense tracking</string>
+    <string name="settings_privacy_policy">Privacy Policy</string>
+    <string name="settings_privacy_policy_subtitle">Your data never leaves your device</string>
+    
+    <!-- Common -->
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="edit">Edit</string>
+    <string name="add">Add</string>
+    <string name="done">Done</string>
+    
+    <!-- Delete confirmation -->
+    <string name="delete_transaction_title">Delete Transaction</string>
+    <string name="delete_transaction_message">Are you sure you want to delete this transaction?</string>
+</resources>
