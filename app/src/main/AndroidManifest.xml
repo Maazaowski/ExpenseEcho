@@ -2,7 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Notification access permission for SMS capture -->
+    <!-- SMS reading permissions -->
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    
+    <!-- Notification access permission for SMS capture (fallback) -->
     <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
     
     <!-- Network permission for future backup features -->
@@ -37,7 +41,7 @@
             </intent-filter>
         </activity>
 
-        <!-- SMS Notification Listener Service -->
+        <!-- SMS Notification Listener Service (Fallback) -->
         <service
             android:name=".service.SmsNotificationListenerService"
             android:exported="false"
@@ -46,6 +50,16 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+        
+        <!-- SMS Receiver for real-time SMS processing -->
+        <receiver
+            android:name=".service.SmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter android:priority="1000">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
 
         <!-- WorkManager for backup operations -->
         <service

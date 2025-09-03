@@ -46,9 +46,24 @@ class TransactionRepository @Inject constructor(
         transactionDao.getTotalByCategory(categoryId, startDate, endDate) ?: 0L
     
     suspend fun insertTransaction(transaction: Transaction) {
+        android.util.Log.d("TransactionRepository", "Inserting transaction: ${transaction.id} - ${transaction.description}")
+        
+        // Check for duplicate transactions
+        val existingTransaction = transactionDao.findDuplicate(
+            transaction.reference, 
+            transaction.date, 
+            transaction.amount
+        )
+        
+        if (existingTransaction != null) {
+            android.util.Log.d("TransactionRepository", "Duplicate transaction found, skipping insert")
+            return
+        }
+        
         val finalTransaction = if (transaction.categoryId == null && transaction.merchant != null) {
             // First, find or create merchant and get its category mapping
             val (merchantId, merchantCategoryId) = merchantRepository.findOrCreateMerchant(transaction.merchant)
+            android.util.Log.d("TransactionRepository", "Merchant created/found: $merchantId, category: $merchantCategoryId")
             
             // Use merchant category if available, otherwise try rules-based categorization
             val categoryId = merchantCategoryId ?: classifyCategory(transaction.merchant, transaction.description)
@@ -62,12 +77,29 @@ class TransactionRepository @Inject constructor(
             transaction
         }
         
-        transactionDao.insert(finalTransaction)
+        android.util.Log.d("TransactionRepository", "Final transaction before insert: ID=${finalTransaction.id}, Date=${finalTransaction.date}, Amount=${finalTransaction.amount}")
         
-        // If merchant exists, increment its transaction count
-        if (finalTransaction.merchant != null) {
-            val merchant = merchantRepository.findMerchantForCategorization(finalTransaction.merchant)
-            merchant?.let { merchantRepository.incrementTransactionCount(it.id) }
+        try {
+            // Log all the foreign key values before insert
+            android.util.Log.d("TransactionRepository", "Attempting to insert transaction with:")
+            android.util.Log.d("TransactionRepository", "  - AccountId: ${finalTransaction.accountId}")
+            android.util.Log.d("TransactionRepository", "  - CategoryId: ${finalTransaction.categoryId}")
+            
+            transactionDao.insert(finalTransaction)
+            android.util.Log.d("TransactionRepository", "Transaction inserted successfully")
+            
+            // If merchant exists, increment its transaction count
+            if (finalTransaction.merchant != null) {
+                val merchant = merchantRepository.findMerchantForCategorization(finalTransaction.merchant)
+                merchant?.let { 
+                    merchantRepository.incrementTransactionCount(it.id)
+                    android.util.Log.d("TransactionRepository", "Incremented transaction count for merchant: ${it.name}")
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("TransactionRepository", "Error inserting transaction: ${e.message}", e)
+            android.util.Log.e("TransactionRepository", "Transaction details - AccountId: ${finalTransaction.accountId}, CategoryId: ${finalTransaction.categoryId}")
+            throw e
         }
     }
     

@@ -1,7 +1,11 @@
 package com.expenseecho.ui.screen.settings
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,11 +18,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.expenseecho.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // SMS permission launcher
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.onSmsPermissionGranted()
+        }
+    }
+    
+    // Check if SMS permission is granted
+    val hasSmsPermission = ContextCompat.checkSelfPermission(
+        context, 
+        Manifest.permission.READ_SMS
+    ) == PackageManager.PERMISSION_GRANTED
     
     LazyColumn(
         modifier = Modifier
@@ -35,13 +61,16 @@ fun SettingsScreen() {
             )
         }
         
-        // Notification Access Setup
+        // SMS Access & Import Setup
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = if (hasSmsPermission) 
+                        MaterialTheme.colorScheme.primaryContainer
+                    else 
+                        MaterialTheme.colorScheme.errorContainer
                 )
             ) {
                 Column(
@@ -51,41 +80,121 @@ fun SettingsScreen() {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Notifications,
+                            imageVector = if (hasSmsPermission) Icons.Default.Sms else Icons.Default.Warning,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            tint = if (hasSmsPermission) 
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            else 
+                                MaterialTheme.colorScheme.onErrorContainer,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = "SMS Notification Access",
+                            text = "SMS Access",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = if (hasSmsPermission) 
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            else 
+                                MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Text(
-                        text = "Enable notification access to automatically capture bank SMS messages and create transactions.",
+                        text = if (hasSmsPermission)
+                            "SMS access granted. You can now import previous transactions and receive new ones automatically."
+                        else
+                            "Grant SMS access to read bank messages and import transactions automatically.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = if (hasSmsPermission) 
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        else 
+                            MaterialTheme.colorScheme.onErrorContainer
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    Button(
-                        onClick = {
-                            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                            context.startActivity(intent)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Text("Open Notification Settings")
+                    if (!hasSmsPermission) {
+                        Button(
+                            onClick = {
+                                smsPermissionLauncher.launch(Manifest.permission.READ_SMS)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text("Grant SMS Permission")
+                        }
+                    } else {
+                        // SMS Import Buttons
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { viewModel.importRecentSms() },
+                                modifier = Modifier.weight(1f),
+                                enabled = !uiState.isImporting
+                            ) {
+                                if (uiState.isImporting && uiState.importType == "recent") {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                } else {
+                                    Text("Last 30 Days")
+                                }
+                            }
+                            
+                            Button(
+                                onClick = { viewModel.importAllSms() },
+                                modifier = Modifier.weight(1f),
+                                enabled = !uiState.isImporting
+                            ) {
+                                if (uiState.isImporting && uiState.importType == "all") {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                } else {
+                                    Text("Import All")
+                                }
+                            }
+                        }
+                        
+                        if (uiState.isImporting) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                progress = uiState.importProgress,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                text = "Importing SMS... ${(uiState.importProgress * 100).toInt()}%",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        
+                        if (uiState.importMessage.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = uiState.importMessage,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        
+                        if (uiState.dbStats.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = uiState.dbStats,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                     }
                 }
             }

@@ -4,6 +4,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import android.content.Context
 import com.expenseecho.data.converter.DateConverters
 import com.expenseecho.data.dao.*
@@ -39,6 +41,31 @@ abstract class ExpenseEchoDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: ExpenseEchoDatabase? = null
         
+        // Migration from version 1 to 2 - adds Merchant table
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Create merchants table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `merchants` (
+                        `id` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `normalizedName` TEXT NOT NULL,
+                        `categoryId` TEXT,
+                        `transactionCount` INTEGER NOT NULL DEFAULT 0,
+                        `lastSeenAt` INTEGER NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`),
+                        FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL
+                    )
+                """.trimIndent())
+                
+                // Create indices for merchants table
+                database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_merchants_name` ON `merchants` (`name`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_merchants_categoryId` ON `merchants` (`categoryId`)")
+            }
+        }
+        
         fun getDatabase(context: Context, passphrase: String): ExpenseEchoDatabase {
             return INSTANCE ?: synchronized(this) {
                 val factory = SupportFactory(SQLiteDatabase.getBytes(passphrase.toCharArray()))
@@ -50,7 +77,7 @@ abstract class ExpenseEchoDatabase : RoomDatabase() {
                 )
                     .openHelperFactory(factory)
                     .addCallback(DatabaseCallback())
-                    .fallbackToDestructiveMigration() // For development - removes this for production
+                    .addMigrations(MIGRATION_1_2)
                     .build()
                 
                 INSTANCE = instance

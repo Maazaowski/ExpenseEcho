@@ -29,6 +29,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: String): Transaction?
     
+    @Query("SELECT * FROM transactions WHERE reference = :reference AND date = :date AND amount = :amount")
+    suspend fun findDuplicate(reference: String?, date: LocalDate, amount: Long): Transaction?
+    
     @Query("SELECT SUM(amount) FROM transactions WHERE type = 'Income' AND date BETWEEN :startDate AND :endDate")
     suspend fun getTotalIncome(startDate: LocalDate, endDate: LocalDate): Long?
     
