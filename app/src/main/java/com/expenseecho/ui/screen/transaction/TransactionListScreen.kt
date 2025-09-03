@@ -26,6 +26,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionListScreen(
+    onTransactionClick: (String) -> Unit = {},
     viewModel: TransactionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -104,6 +105,7 @@ fun TransactionListScreen(
                 items(uiState.filteredTransactions) { transaction ->
                     TransactionItem(
                         transaction = transaction,
+                        onClick = { onTransactionClick(transaction.id) },
                         onDelete = { viewModel.deleteTransaction(transaction) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -144,6 +146,7 @@ private fun TransactionFilterChips(
 @Composable
 private fun TransactionItem(
     transaction: Transaction,
+    onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -151,7 +154,7 @@ private fun TransactionItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
-        onClick = { /* Navigate to detail screen */ }
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier.padding(16.dp),

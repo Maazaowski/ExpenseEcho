@@ -32,6 +32,14 @@ object SmsParser {
     private val merchantAtRx = Regex("at\\s+([A-Z0-9 &\\-_.]{3,60})(?:\\.|$)", RegexOption.IGNORE_CASE)
     private val fromPersonRx = Regex("from\\s+([A-Z\\s]{3,40})\\s+(?:BAF|TMB)", RegexOption.IGNORE_CASE)
     private val toPersonRx = Regex("to\\s+([A-Z\\s]{3,40})\\s+(?:BAF|TMB)", RegexOption.IGNORE_CASE)
+    
+    // Enhanced patterns for better merchant extraction
+    private val merchantAtRx2 = Regex("charged for.*?at\\s+([A-Z0-9 &\\-_.,']{3,60})", RegexOption.IGNORE_CASE)
+    private val viaRx = Regex("via\\s+([A-Z0-9 \\-_.,']{3,40})", RegexOption.IGNORE_CASE)
+    
+    // Date extraction pattern
+    private val dateRx = Regex("on\\s+(\\d{1,2})-([A-Z]{3})-(\\d{2})", RegexOption.IGNORE_CASE)
+    private val timeRx = Regex("at\\s+(\\d{1,2}):(\\d{2}):(\\d{2})", RegexOption.IGNORE_CASE)
 
     data class ParsedSms(
         val date: LocalDate = LocalDate.now(),
@@ -105,6 +113,13 @@ object SmsParser {
             else -> null
         }
         
+        // Try alternative extraction methods if primary failed
+        val finalMerchant = merchant ?: when {
+            isCharged -> extractMerchantAlternative(raw)
+            isFundsTransfer -> extractViaMethod(raw)
+            else -> null
+        }
+        
         // Determine category heuristics (will be refined later by rules)
         val categoryId = when {
             isSent || (isFundsTransfer && !isReceived) -> null // will be categorized as "transfer"
@@ -114,9 +129,9 @@ object SmsParser {
         
         // Create description
         val description = when {
-            reference != null && merchant != null -> "$merchant (Tx: $reference)"
+            reference != null && finalMerchant != null -> "$finalMerchant (Tx: $reference)"
             reference != null -> "Tx ID: $reference"
-            merchant != null -> merchant
+            finalMerchant != null -> finalMerchant
             else -> "Bank Transaction"
         }
         
@@ -126,7 +141,7 @@ object SmsParser {
             paymentMethod = paymentMethod,
             categoryId = categoryId,
             accountMask = accountMask,
-            merchant = merchant,
+            merchant = finalMerchant,
             description = description,
             reference = reference,
             raw = raw
@@ -176,6 +191,24 @@ object SmsParser {
      */
     private fun extractPersonTo(text: String): String? {
         val match = toPersonRx.find(text)
+        return match?.groupValues?.get(1)?.trim()
+    }
+    
+    /**
+     * Alternative merchant extraction for charged transactions
+     * Example: "charged for PKR 2,853.99 on 1-Sep-25 at 01:13:03 at FOOD PANDA KARACHI PK"
+     */
+    private fun extractMerchantAlternative(text: String): String? {
+        val match = merchantAtRx2.find(text)
+        return match?.groupValues?.get(1)?.trim()?.removeSuffix(".")
+    }
+    
+    /**
+     * Extract method/channel from "via" transactions
+     * Example: "via Funds Trsfr Web"
+     */
+    private fun extractViaMethod(text: String): String? {
+        val match = viaRx.find(text)
         return match?.groupValues?.get(1)?.trim()
     }
     

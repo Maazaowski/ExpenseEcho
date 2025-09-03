@@ -29,7 +29,7 @@ class DatabaseCallback : RoomDatabase.Callback() {
         // Default account (the target account from SMS filtering)
         val defaultAccount = Account(
             id = "spend-0030-1",
-            displayName = "Spending (0030-1)",
+            displayName = "Spending (6809)",
             mask = "****0030-1******6809"
         )
         database.accountDao().insert(defaultAccount)

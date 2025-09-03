@@ -18,6 +18,7 @@ import com.expenseecho.ui.screen.dashboard.DashboardScreen
 import com.expenseecho.ui.screen.debt.DebtScreen
 import com.expenseecho.ui.screen.settings.SettingsScreen
 import com.expenseecho.ui.screen.transaction.TransactionListScreen
+import com.expenseecho.ui.screen.transaction.TransactionDetailsScreen
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Home)
@@ -25,6 +26,7 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
     object Budget : Screen("budget", "Budget", Icons.Default.AccountBalanceWallet)
     object Debt : Screen("debt", "Debt", Icons.Default.CreditCard)
     object Settings : Screen("settings", "Settings", Icons.Default.Settings)
+    object TransactionDetails : Screen("transaction_details/{transactionId}", "Transaction Details", Icons.Default.Receipt)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,7 +75,11 @@ fun ExpenseEchoNavigation() {
                 DashboardScreen()
             }
             composable(Screen.Transactions.route) {
-                TransactionListScreen()
+                TransactionListScreen(
+                    onTransactionClick = { transactionId ->
+                        navController.navigate("transaction_details/$transactionId")
+                    }
+                )
             }
             composable(Screen.Budget.route) {
                 BudgetScreen()
@@ -83,6 +89,15 @@ fun ExpenseEchoNavigation() {
             }
             composable(Screen.Settings.route) {
                 SettingsScreen()
+            }
+            composable(Screen.TransactionDetails.route) { backStackEntry ->
+                val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
+                TransactionDetailsScreen(
+                    transactionId = transactionId,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }
