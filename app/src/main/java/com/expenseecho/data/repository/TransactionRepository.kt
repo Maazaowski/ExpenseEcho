@@ -12,7 +12,8 @@ import javax.inject.Singleton
 @Singleton
 class TransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
-    private val ruleDao: RuleDao
+    private val ruleDao: RuleDao,
+    private val merchantRepository: MerchantRepository
 ) {
     
     fun getAllTransactions(): Flow<List<Transaction>> = transactionDao.getAll()
@@ -45,8 +46,16 @@ class TransactionRepository @Inject constructor(
         transactionDao.getTotalByCategory(categoryId, startDate, endDate) ?: 0L
     
     suspend fun insertTransaction(transaction: Transaction) {
-        val finalTransaction = if (transaction.categoryId == null) {
-            // Auto-categorize using rules
+        val finalTransaction = if (transaction.categoryId == null && transaction.merchant != null) {
+            // First, find or create merchant and get its category mapping
+            val (merchantId, merchantCategoryId) = merchantRepository.findOrCreateMerchant(transaction.merchant)
+            
+            // Use merchant category if available, otherwise try rules-based categorization
+            val categoryId = merchantCategoryId ?: classifyCategory(transaction.merchant, transaction.description)
+            
+            transaction.copy(categoryId = categoryId)
+        } else if (transaction.categoryId == null) {
+            // Auto-categorize using rules only
             val categoryId = classifyCategory(transaction.merchant, transaction.description)
             transaction.copy(categoryId = categoryId)
         } else {
@@ -54,6 +63,12 @@ class TransactionRepository @Inject constructor(
         }
         
         transactionDao.insert(finalTransaction)
+        
+        // If merchant exists, increment its transaction count
+        if (finalTransaction.merchant != null) {
+            val merchant = merchantRepository.findMerchantForCategorization(finalTransaction.merchant)
+            merchant?.let { merchantRepository.incrementTransactionCount(it.id) }
+        }
     }
     
     suspend fun insertTransactionWithId(transaction: Transaction): String {

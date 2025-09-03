@@ -42,6 +42,9 @@ object DatabaseModule {
     @Provides
     fun provideRuleDao(database: ExpenseEchoDatabase): RuleDao = database.ruleDao()
     
+    @Provides
+    fun provideMerchantDao(database: ExpenseEchoDatabase): MerchantDao = database.merchantDao()
+    
     private fun getDatabasePassphrase(context: Context): String {
         val masterKey = MasterKey.Builder(context)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)

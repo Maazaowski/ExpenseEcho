@@ -18,9 +18,10 @@ import net.sqlcipher.database.SupportFactory
         Category::class,
         Budget::class,
         Debt::class,
-        Rule::class
+        Rule::class,
+        Merchant::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(DateConverters::class)
@@ -32,6 +33,7 @@ abstract class ExpenseEchoDatabase : RoomDatabase() {
     abstract fun budgetDao(): BudgetDao
     abstract fun debtDao(): DebtDao
     abstract fun ruleDao(): RuleDao
+    abstract fun merchantDao(): MerchantDao
     
     companion object {
         @Volatile
@@ -48,6 +50,7 @@ abstract class ExpenseEchoDatabase : RoomDatabase() {
                 )
                     .openHelperFactory(factory)
                     .addCallback(DatabaseCallback())
+                    .fallbackToDestructiveMigration() // For development - removes this for production
                     .build()
                 
                 INSTANCE = instance

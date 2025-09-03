@@ -19,6 +19,7 @@ import com.expenseecho.ui.screen.debt.DebtScreen
 import com.expenseecho.ui.screen.settings.SettingsScreen
 import com.expenseecho.ui.screen.transaction.TransactionListScreen
 import com.expenseecho.ui.screen.transaction.TransactionDetailsScreen
+import com.expenseecho.ui.screen.merchant.MerchantListScreen
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Home)
@@ -27,6 +28,7 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
     object Debt : Screen("debt", "Debt", Icons.Default.CreditCard)
     object Settings : Screen("settings", "Settings", Icons.Default.Settings)
     object TransactionDetails : Screen("transaction_details/{transactionId}", "Transaction Details", Icons.Default.Receipt)
+    object Merchants : Screen("merchants", "Merchants", Icons.Default.Store)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +40,7 @@ fun ExpenseEchoNavigation() {
         Screen.Transactions,
         Screen.Budget,
         Screen.Debt,
+        Screen.Merchants,
         Screen.Settings
     )
     
@@ -86,6 +89,13 @@ fun ExpenseEchoNavigation() {
             }
             composable(Screen.Debt.route) {
                 DebtScreen()
+            }
+            composable(Screen.Merchants.route) {
+                MerchantListScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
             composable(Screen.Settings.route) {
                 SettingsScreen()
