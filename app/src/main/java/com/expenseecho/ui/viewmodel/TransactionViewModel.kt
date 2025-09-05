@@ -50,6 +50,11 @@ class TransactionViewModel @Inject constructor(
     ) { transactions, categories, query, filter ->
         val filtered = filterTransactions(transactions, query, filter)
         
+        // Log only significant changes
+        if (transactions.size % 10 == 0 || transactions.size < 10) {
+            android.util.Log.d("TransactionViewModel", "UI updated: ${transactions.size} total, ${filtered.size} filtered")
+        }
+        
         TransactionUiState(
             transactions = transactions,
             categories = categories,
@@ -60,7 +65,7 @@ class TransactionViewModel @Inject constructor(
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Lazily,
         initialValue = TransactionUiState(isLoading = true)
     )
     

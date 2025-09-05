@@ -99,26 +99,17 @@ class SettingsViewModel @Inject constructor(
         
         viewModelScope.launch {
             try {
-                smsReaderService.importAllBankSms(
-                    onProgress = { processed, total ->
-                        val progress = if (total > 0) processed.toFloat() / total else 0f
-                        _uiState.value = _uiState.value.copy(
-                            importProgress = progress,
-                            importMessage = "Processing SMS $processed of $total..."
-                        )
-                    },
-                    onComplete = { importedCount ->
-                        _uiState.value = _uiState.value.copy(
-                            isImporting = false,
-                            importProgress = 1f,
-                            importMessage = if (importedCount > 0) 
-                                "Successfully imported $importedCount transactions from all SMS"
-                            else 
-                                "No transactions found in SMS history"
-                        )
-                        loadDatabaseStats()
-                    }
-                )
+                smsReaderService.importAllBankSms { importedCount ->
+                    _uiState.value = _uiState.value.copy(
+                        isImporting = false,
+                        importProgress = 1f,
+                        importMessage = if (importedCount > 0) 
+                            "Successfully imported $importedCount transactions from all SMS"
+                        else 
+                            "No transactions found in SMS history"
+                    )
+                    loadDatabaseStats()
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isImporting = false,

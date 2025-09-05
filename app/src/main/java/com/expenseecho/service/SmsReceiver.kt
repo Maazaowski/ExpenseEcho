@@ -43,7 +43,7 @@ class SmsReceiver : BroadcastReceiver() {
                         body.contains("PKR", ignoreCase = true)) {
                         
                         // Process the SMS
-                        smsReaderService.processSingleSms(body, timestamp)
+                        smsReaderService.processSingleSms(body)
                     }
                 }
             }
