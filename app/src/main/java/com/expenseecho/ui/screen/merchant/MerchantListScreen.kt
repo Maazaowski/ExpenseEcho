@@ -135,6 +135,9 @@ fun MerchantListScreen(
                                 onCategoryChanged = { categoryId ->
                                     viewModel.updateMerchantCategory(merchant.id, categoryId)
                                 },
+                                onCreateCustomCategory = { categoryName ->
+                                    viewModel.createCustomCategory(categoryName)
+                                },
                                 onDelete = { viewModel.deleteMerchant(merchant) }
                             )
                         }
@@ -213,6 +216,7 @@ private fun MerchantItem(
     merchant: Merchant,
     categories: List<Category>,
     onCategoryChanged: (String?) -> Unit,
+    onCreateCustomCategory: (String) -> Unit,
     onDelete: () -> Unit
 ) {
     var showCategoryDialog by remember { mutableStateOf(false) }
@@ -336,6 +340,10 @@ private fun MerchantItem(
                 onCategoryChanged(categoryId)
                 showCategoryDialog = false
             },
+            onCreateCustomCategory = { categoryName ->
+                onCreateCustomCategory(categoryName)
+                showCategoryDialog = false
+            },
             onDismiss = { showCategoryDialog = false }
         )
     }
@@ -370,8 +378,11 @@ private fun CategorySelectionDialog(
     categories: List<Category>,
     selectedCategoryId: String?,
     onCategorySelected: (String?) -> Unit,
+    onCreateCustomCategory: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
+    var showCreateDialog by remember { mutableStateOf(false) }
+    
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Select Category") },
@@ -410,11 +421,92 @@ private fun CategorySelectionDialog(
                         Text(category.name)
                     }
                 }
+                
+                // Add custom category option
+                item {
+                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        TextButton(
+                            onClick = { showCreateDialog = true }
+                        ) {
+                            Text("Create Custom Category")
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text("Done")
+            }
+        }
+    )
+    
+    // Create custom category dialog
+    if (showCreateDialog) {
+        CreateCategoryDialog(
+            onCategoryCreated = { categoryName ->
+                onCreateCustomCategory(categoryName)
+                showCreateDialog = false
+            },
+            onDismiss = { showCreateDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun CreateCategoryDialog(
+    onCategoryCreated: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var categoryName by remember { mutableStateOf("") }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Create Custom Category") },
+        text = {
+            Column {
+                Text(
+                    text = "Enter a name for your custom category:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                OutlinedTextField(
+                    value = categoryName,
+                    onValueChange = { categoryName = it },
+                    label = { Text("Category Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (categoryName.isNotBlank()) {
+                        onCategoryCreated(categoryName.trim())
+                    }
+                },
+                enabled = categoryName.isNotBlank()
+            ) {
+                Text("Create")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
             }
         }
     )

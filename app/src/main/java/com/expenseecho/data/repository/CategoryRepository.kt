@@ -34,4 +34,15 @@ class CategoryRepository @Inject constructor(
     suspend fun deleteCategoryById(id: String) {
         categoryDao.deleteById(id)
     }
+    
+    suspend fun createCustomCategory(name: String): Category {
+        val category = Category(
+            id = name.lowercase().replace(" ", "_"),
+            name = name,
+            color = "#9E9E9E", // Default gray color
+            icon = "category"
+        )
+        categoryDao.insert(category)
+        return category
+    }
 }

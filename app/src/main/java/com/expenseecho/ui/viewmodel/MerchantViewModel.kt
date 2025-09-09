@@ -50,7 +50,7 @@ class MerchantViewModel @Inject constructor(
         
         MerchantUiState(
             merchants = merchants,
-            categories = categories.filter { it.isBudgetable }, // Only show budgetable categories
+            categories = categories, // Show all categories for merchant mapping
             filteredMerchants = filtered,
             selectedFilter = filter,
             searchQuery = query,
@@ -81,6 +81,16 @@ class MerchantViewModel @Inject constructor(
     fun deleteMerchant(merchant: Merchant) {
         viewModelScope.launch {
             merchantRepository.deleteMerchant(merchant)
+        }
+    }
+    
+    fun createCustomCategory(name: String) {
+        viewModelScope.launch {
+            try {
+                categoryRepository.createCustomCategory(name)
+            } catch (e: Exception) {
+                // Handle error if needed
+            }
         }
     }
     
