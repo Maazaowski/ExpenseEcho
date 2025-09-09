@@ -20,7 +20,7 @@ class SmsReceiver : BroadcastReceiver() {
     }
     
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d(TAG, "SMS received: ${intent.action}")
+        Log.d(TAG, "📱 SMS received: ${intent.action}")
         
         if (intent.action == Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {
             val smsMessages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
@@ -30,11 +30,11 @@ class SmsReceiver : BroadcastReceiver() {
                 val body = smsMessage.messageBody
                 val timestamp = smsMessage.timestampMillis
                 
-                Log.d(TAG, "SMS from: $sender, Body: $body")
+                Log.d(TAG, "📨 SMS from: $sender, Body: ${body.take(100)}...")
                 
                 // Check if SMS is from bank
                 if (sender == BANK_SMS_NUMBER || sender?.contains("8287") == true) {
-                    Log.d(TAG, "Processing bank SMS")
+                    Log.d(TAG, "🏦 Bank SMS detected from: $sender")
                     
                     // Check if it contains bank transaction keywords
                     if (body.contains("Dear Customer", ignoreCase = true) || 
@@ -42,9 +42,14 @@ class SmsReceiver : BroadcastReceiver() {
                         body.contains("Debit Card", ignoreCase = true) ||
                         body.contains("PKR", ignoreCase = true)) {
                         
+                        Log.d(TAG, "✅ Bank transaction SMS detected, processing...")
                         // Process the SMS
                         smsReaderService.processSingleSms(body)
+                    } else {
+                        Log.d(TAG, "❌ Bank SMS but not a transaction (no keywords found)")
                     }
+                } else {
+                    Log.d(TAG, "❌ SMS not from bank: $sender")
                 }
             }
         }

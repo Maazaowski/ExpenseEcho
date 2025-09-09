@@ -20,6 +20,7 @@ object SmsParser {
     
     // Transaction type detection patterns
     private val chargedRx = Regex("is charged", RegexOption.IGNORE_CASE)
+    private val creditedRx = Regex("is credited|amount is credited|credited to", RegexOption.IGNORE_CASE)
     private val receivedRx = Regex("recieved|received", RegexOption.IGNORE_CASE)
     private val sentRx = Regex("sent to", RegexOption.IGNORE_CASE)
     private val fundsTransferRx = Regex("Funds Trsfr|Funds Transfer", RegexOption.IGNORE_CASE)
@@ -77,15 +78,19 @@ object SmsParser {
         // Extract amount and convert to paisa
         val amount = extractAmount(raw) ?: return null
         
+        // Extract transaction date from SMS
+        val transactionDate = extractTransactionDate(raw)
+        
         // Determine transaction type based on your bank's specific language
         val isCharged = chargedRx.containsMatchIn(raw)
+        val isCredited = creditedRx.containsMatchIn(raw)
         val isReceived = receivedRx.containsMatchIn(raw)
         val isSent = sentRx.containsMatchIn(raw)
         val isFundsTransfer = fundsTransferRx.containsMatchIn(raw)
         
         val type = when {
-            isReceived -> "Income"
-            isSent || (isFundsTransfer && !isReceived) -> "Transfer"
+            isReceived || isCredited -> "Income"
+            isSent || (isFundsTransfer && !isReceived && !isCredited) -> "Transfer"
             isCharged -> "Expense"
             else -> "Expense" // default to expense if unclear
         }
@@ -136,6 +141,7 @@ object SmsParser {
         }
         
         return ParsedSms(
+            date = transactionDate,
             amount = amount,
             type = type,
             paymentMethod = paymentMethod,
@@ -165,6 +171,41 @@ object SmsParser {
             }
         }
         return null
+    }
+    
+    private fun extractTransactionDate(text: String): LocalDate {
+        // Try to extract date from SMS text
+        val dateMatch = dateRx.find(text)
+        if (dateMatch != null) {
+            try {
+                val day = dateMatch.groupValues[1].toInt()
+                val monthStr = dateMatch.groupValues[2]
+                val year = "20" + dateMatch.groupValues[3] // Convert 2-digit year to 4-digit
+                
+                val month = when (monthStr.uppercase()) {
+                    "JAN" -> 1
+                    "FEB" -> 2
+                    "MAR" -> 3
+                    "APR" -> 4
+                    "MAY" -> 5
+                    "JUN" -> 6
+                    "JUL" -> 7
+                    "AUG" -> 8
+                    "SEP" -> 9
+                    "OCT" -> 10
+                    "NOV" -> 11
+                    "DEC" -> 12
+                    else -> return LocalDate.now()
+                }
+                
+                return LocalDate.of(year.toInt(), month, day)
+            } catch (e: Exception) {
+                // If parsing fails, fall back to current date
+            }
+        }
+        
+        // If no date found in SMS, return current date
+        return LocalDate.now()
     }
     
     /**

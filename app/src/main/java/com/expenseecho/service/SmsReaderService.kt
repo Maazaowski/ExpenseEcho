@@ -194,9 +194,12 @@ class SmsReaderService @Inject constructor(
     fun processSingleSms(smsBody: String) {
         serviceScope.launch {
             try {
+                Log.d(TAG, "🔄 Processing real-time SMS: ${smsBody.take(100)}...")
                 val parsedSms = SmsParser.parse(smsBody)
                 if (parsedSms != null) {
                     val accountMask = parsedSms.accountMask
+                    Log.d(TAG, "📋 Parsed SMS - Type: ${parsedSms.type}, Amount: ${parsedSms.amount}, Account: $accountMask, Date: ${parsedSms.date}")
+                    
                     if (accountMask != null && isTargetAccount(accountMask)) {
                         processingMutex.withLock {
                             var account = accountRepository.getAccountByMask(accountMask)
@@ -210,14 +213,16 @@ class SmsReaderService @Inject constructor(
                             
                             val transaction = parsedSms.toTransaction(account.id)
                             transactionRepository.insertTransactionWithAccount(transaction, accountMask)
-                            Log.d(TAG, "New transaction processed: ${transaction.merchant} - ${transaction.amount}")
+                            Log.i(TAG, "✅ Real-time transaction processed: ${transaction.type} - ${transaction.merchant} - ${transaction.amount} - ${transaction.date}")
                         }
+                    } else {
+                        Log.d(TAG, "❌ SMS not processed: Account mask '$accountMask' doesn't match target patterns")
                     }
                 } else {
-                    Log.d(TAG, "SMS not processed: parsing failed or account mismatch")
+                    Log.d(TAG, "❌ SMS not processed: Parsing failed")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error processing single SMS: ${e.message}", e)
+                Log.e(TAG, "💥 Error processing single SMS: ${e.message}", e)
             }
         }
     }
