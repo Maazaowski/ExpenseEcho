@@ -124,8 +124,7 @@ private fun TransactionFilterChips(
     val filters = listOf(
         TransactionFilter.All to "All",
         TransactionFilter.Income to "Income",
-        TransactionFilter.Expense to "Expense",
-        TransactionFilter.Transfer to "Transfer"
+        TransactionFilter.Expense to "Expense" // Now includes transfers
     )
     
     Row(

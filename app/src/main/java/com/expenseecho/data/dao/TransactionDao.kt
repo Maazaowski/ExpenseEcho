@@ -41,8 +41,11 @@ interface TransactionDao {
     @Query("SELECT SUM(amount) FROM transactions WHERE type = 'Expense' AND date BETWEEN :startDate AND :endDate")
     suspend fun getTotalExpenses(startDate: LocalDate, endDate: LocalDate): Long?
     
-    @Query("SELECT SUM(amount) FROM transactions WHERE categoryId = :categoryId AND date BETWEEN :startDate AND :endDate")
+    @Query("SELECT SUM(amount) FROM transactions WHERE categoryId = :categoryId AND type = 'Expense' AND date BETWEEN :startDate AND :endDate")
     suspend fun getTotalByCategory(categoryId: String, startDate: LocalDate, endDate: LocalDate): Long?
+    
+    @Query("SELECT SUM(amount) FROM transactions WHERE categoryId IS NULL AND type = 'Expense' AND date BETWEEN :startDate AND :endDate")
+    suspend fun getTotalUncategorized(startDate: LocalDate, endDate: LocalDate): Long?
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(transaction: Transaction)
@@ -61,4 +64,7 @@ interface TransactionDao {
     
     @Query("DELETE FROM transactions")
     suspend fun deleteAll()
+    
+    @Query("UPDATE transactions SET categoryId = :categoryId WHERE merchant = :merchantName")
+    suspend fun updateCategoryByMerchant(merchantName: String, categoryId: String?)
 }

@@ -50,6 +50,9 @@ class TransactionRepository @Inject constructor(
     suspend fun getTotalByCategory(categoryId: String, startDate: LocalDate, endDate: LocalDate): Long =
         transactionDao.getTotalByCategory(categoryId, startDate, endDate) ?: 0L
     
+    suspend fun getTotalUncategorized(startDate: LocalDate, endDate: LocalDate): Long =
+        transactionDao.getTotalUncategorized(startDate, endDate) ?: 0L
+    
     suspend fun getTransactionCount(): Int = transactionDao.getCount()
     
     
@@ -136,6 +139,14 @@ class TransactionRepository @Inject constructor(
     
     suspend fun deleteAllTransactions() {
         transactionDao.deleteAll()
+    }
+    
+    /**
+     * Update all transactions for a specific merchant when its category mapping changes
+     */
+    suspend fun updateTransactionsByMerchant(merchantName: String, categoryId: String?) {
+        android.util.Log.d("TransactionRepository", "Updating transactions for merchant '$merchantName' to category '$categoryId'")
+        transactionDao.updateCategoryByMerchant(merchantName, categoryId)
     }
     
     private suspend fun classifyCategory(merchant: String?, description: String?): String? {

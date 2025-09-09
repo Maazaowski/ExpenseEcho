@@ -45,7 +45,25 @@ class MerchantRepository @Inject constructor(
     }
     
     suspend fun updateMerchantCategory(merchantId: String, categoryId: String?) {
-        merchantDao.updateCategory(merchantId, categoryId, System.currentTimeMillis())
+        // Get the merchant to find its name
+        val merchant = merchantDao.getById(merchantId)
+        if (merchant != null) {
+            android.util.Log.d("MerchantRepository", "Updating merchant '${merchant.name}' category to '$categoryId'")
+            
+            // Update the merchant's category
+            merchantDao.updateCategory(merchantId, categoryId, System.currentTimeMillis())
+            
+            android.util.Log.d("MerchantRepository", "✅ Updated merchant '${merchant.name}' category")
+        } else {
+            android.util.Log.w("MerchantRepository", "Merchant with ID '$merchantId' not found")
+        }
+    }
+    
+    /**
+     * Get merchant name by ID for transaction updates
+     */
+    suspend fun getMerchantNameById(merchantId: String): String? {
+        return merchantDao.getById(merchantId)?.name
     }
     
     suspend fun incrementTransactionCount(merchantId: String) {

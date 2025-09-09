@@ -5,6 +5,7 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.expenseecho.data.database.ExpenseEchoDatabase
 import com.expenseecho.data.dao.*
+import com.expenseecho.data.analytics.AnalyticsEngine
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -44,6 +45,14 @@ object DatabaseModule {
     
     @Provides
     fun provideMerchantDao(database: ExpenseEchoDatabase): MerchantDao = database.merchantDao()
+    
+    @Provides
+    @Singleton
+    fun provideAnalyticsEngine(
+        transactionRepository: com.expenseecho.data.repository.TransactionRepository,
+        categoryRepository: com.expenseecho.data.repository.CategoryRepository,
+        budgetRepository: com.expenseecho.data.repository.BudgetRepository
+    ): AnalyticsEngine = AnalyticsEngine(transactionRepository, categoryRepository, budgetRepository)
     
     private fun getDatabasePassphrase(context: Context): String {
         val masterKey = MasterKey.Builder(context)

@@ -33,7 +33,7 @@ data class Transaction(
     val id: String,            // uuid
     val date: LocalDate,
     val amount: Long,          // store in paisa (PKR * 100)
-    val type: String,          // "Income" | "Expense" | "Transfer"
+    val type: String,          // "Income" | "Expense" (transfers are treated as expenses)
     val categoryId: String?,   // nullable for "-" or "Transfer"
     val accountId: String,     // FK -> Account
     val paymentMethod: String, // "Debit Card" | "Bank Transfer"

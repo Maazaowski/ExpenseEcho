@@ -6,6 +6,7 @@ import com.expenseecho.data.entity.Merchant
 import com.expenseecho.data.entity.Category
 import com.expenseecho.data.repository.MerchantRepository
 import com.expenseecho.data.repository.CategoryRepository
+import com.expenseecho.data.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -31,7 +32,8 @@ sealed class MerchantFilter {
 @HiltViewModel
 class MerchantViewModel @Inject constructor(
     private val merchantRepository: MerchantRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val transactionRepository: TransactionRepository
 ) : ViewModel() {
     
     private val _searchQuery = MutableStateFlow("")
@@ -74,7 +76,14 @@ class MerchantViewModel @Inject constructor(
     
     fun updateMerchantCategory(merchantId: String, categoryId: String?) {
         viewModelScope.launch {
+            // Update the merchant's category
             merchantRepository.updateMerchantCategory(merchantId, categoryId)
+            
+            // Get the merchant name and update all related transactions
+            val merchantName = merchantRepository.getMerchantNameById(merchantId)
+            if (merchantName != null) {
+                transactionRepository.updateTransactionsByMerchant(merchantName, categoryId)
+            }
         }
     }
     
