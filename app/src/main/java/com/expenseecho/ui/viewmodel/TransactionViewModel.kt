@@ -24,7 +24,8 @@ data class TransactionUiState(
 sealed class TransactionFilter {
     object All : TransactionFilter()
     object Income : TransactionFilter()
-    object Expense : TransactionFilter() // Now includes transfers as a subcategory
+    object Expense : TransactionFilter()
+    object Transfer : TransactionFilter()
     data class Category(val categoryId: String) : TransactionFilter()
     data class DateRange(val startDate: LocalDate, val endDate: LocalDate) : TransactionFilter()
 }
@@ -102,7 +103,8 @@ class TransactionViewModel @Inject constructor(
         filtered = when (filter) {
             is TransactionFilter.All -> filtered
             is TransactionFilter.Income -> filtered.filter { it.type == "Income" }
-            is TransactionFilter.Expense -> filtered.filter { it.type == "Expense" } // Now includes transfers
+            is TransactionFilter.Expense -> filtered.filter { it.type == "Expense" }
+            is TransactionFilter.Transfer -> filtered.filter { it.type == "Transfer" }
             is TransactionFilter.Category -> filtered.filter { it.categoryId == filter.categoryId }
             is TransactionFilter.DateRange -> filtered.filter { 
                 it.date >= filter.startDate && it.date <= filter.endDate 

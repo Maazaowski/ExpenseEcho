@@ -122,19 +122,32 @@ private fun TransactionFilterChips(
     onFilterSelected: (TransactionFilter) -> Unit
 ) {
     val filters = listOf(
-        TransactionFilter.All to "All",
-        TransactionFilter.Income to "Income",
-        TransactionFilter.Expense to "Expense" // Now includes transfers
+        TransactionFilter.All to "All" to Icons.Default.List,
+        TransactionFilter.Income to "Income" to Icons.Default.TrendingUp,
+        TransactionFilter.Expense to "Expense" to Icons.Default.TrendingDown,
+        TransactionFilter.Transfer to "Transfer" to Icons.Default.SwapHoriz
     )
     
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        filters.forEach { (filter, label) ->
+        filters.forEach { (filter, label, icon) ->
             FilterChip(
                 onClick = { onFilterSelected(filter) },
-                label = { Text(label) },
+                label = { 
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(label)
+                    }
+                },
                 selected = selectedFilter == filter
             )
         }
