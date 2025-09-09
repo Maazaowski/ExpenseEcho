@@ -23,35 +23,42 @@ class SmsReceiver : BroadcastReceiver() {
         Log.d(TAG, "📱 SMS received: ${intent.action}")
         
         if (intent.action == Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {
-            val smsMessages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-            
-            for (smsMessage in smsMessages) {
-                val sender = smsMessage.originatingAddress
-                val body = smsMessage.messageBody
-                val timestamp = smsMessage.timestampMillis
+            try {
+                val smsMessages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
+                Log.d(TAG, "📨 Processing ${smsMessages.size} SMS messages")
                 
-                Log.d(TAG, "📨 SMS from: $sender, Body: ${body.take(100)}...")
-                
-                // Check if SMS is from bank
-                if (sender == BANK_SMS_NUMBER || sender?.contains("8287") == true) {
-                    Log.d(TAG, "🏦 Bank SMS detected from: $sender")
+                for (smsMessage in smsMessages) {
+                    val sender = smsMessage.originatingAddress
+                    val body = smsMessage.messageBody
+                    val timestamp = smsMessage.timestampMillis
                     
-                    // Check if it contains bank transaction keywords
-                    if (body.contains("Dear Customer", ignoreCase = true) || 
-                        body.contains("BAF A/C", ignoreCase = true) ||
-                        body.contains("Debit Card", ignoreCase = true) ||
-                        body.contains("PKR", ignoreCase = true)) {
+                    Log.d(TAG, "📨 SMS from: $sender, Body: ${body.take(100)}...")
+                    
+                    // Check if SMS is from bank
+                    if (sender == BANK_SMS_NUMBER || sender?.contains("8287") == true) {
+                        Log.d(TAG, "🏦 Bank SMS detected from: $sender")
                         
-                        Log.d(TAG, "✅ Bank transaction SMS detected, processing...")
-                        // Process the SMS
-                        smsReaderService.processSingleSms(body)
+                        // Check if it contains bank transaction keywords
+                        if (body.contains("Dear Customer", ignoreCase = true) || 
+                            body.contains("BAF A/C", ignoreCase = true) ||
+                            body.contains("Debit Card", ignoreCase = true) ||
+                            body.contains("PKR", ignoreCase = true)) {
+                            
+                            Log.d(TAG, "✅ Bank transaction SMS detected, processing...")
+                            // Process the SMS
+                            smsReaderService.processSingleSms(body)
+                        } else {
+                            Log.d(TAG, "❌ Bank SMS but not a transaction (no keywords found)")
+                        }
                     } else {
-                        Log.d(TAG, "❌ Bank SMS but not a transaction (no keywords found)")
+                        Log.d(TAG, "❌ SMS not from bank: $sender")
                     }
-                } else {
-                    Log.d(TAG, "❌ SMS not from bank: $sender")
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "💥 Error processing SMS: ${e.message}", e)
             }
+        } else {
+            Log.d(TAG, "❌ Unknown intent action: ${intent.action}")
         }
     }
 }

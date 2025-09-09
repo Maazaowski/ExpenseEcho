@@ -44,19 +44,46 @@ fun DashboardScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-            MonthSelector(
-                currentMonth = uiState.currentMonth,
-                onPreviousMonth = viewModel::goToPreviousMonth,
-                onNextMonth = viewModel::goToNextMonth
-            )
+                MonthSelector(
+                    currentMonth = uiState.currentMonth,
+                    onPreviousMonth = viewModel::goToPreviousMonth,
+                    onNextMonth = viewModel::goToNextMonth
+                )
                 
-                IconButton(
-                    onClick = { viewModel.showAddGraphDialog() }
+                Row(
+                    modifier = Modifier
+                        .background(
+                            Color.LightGray.copy(alpha = 0.3f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Custom Graph"
-                    )
+                    IconButton(
+                        onClick = { viewModel.refreshTransactions() },
+                        enabled = !uiState.isRefreshing
+                    ) {
+                        if (uiState.isRefreshing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Refresh Transactions"
+                            )
+                        }
+                    }
+                    
+                    IconButton(
+                        onClick = { viewModel.showAddGraphDialog() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Custom Graph"
+                        )
+                    }
                 }
             }
         }
@@ -98,19 +125,19 @@ fun DashboardScreen(
         // Category spending pie chart
         uiState.monthlyAnalytics?.categoryAnalysis?.let { categoryAnalysis ->
             if (categoryAnalysis.isNotEmpty()) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Spending by Category",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
+                        Text(
+                            text = "Spending by Category",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
                             Spacer(modifier = Modifier.height(16.dp))
                             PieChart(
                                 data = categoryAnalysis.take(8),
@@ -582,8 +609,8 @@ private fun MonthSelector(
     onNextMonth: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.wrapContentWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onPreviousMonth) {

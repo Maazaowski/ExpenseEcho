@@ -59,20 +59,41 @@ class TransactionRepository @Inject constructor(
     suspend fun insertTransaction(transaction: Transaction) {
         android.util.Log.d("TransactionRepository", "Inserting transaction: ${transaction.id} - ${transaction.description}")
         
-        // Check for duplicate transactions (only if reference exists)
+        // Check for duplicate transactions using multiple methods
+        var existingTransaction: Transaction? = null
+        
+        // First check by raw text (most reliable for SMS duplicates)
+        if (transaction.rawText != null) {
+            existingTransaction = transactionDao.findDuplicateByRawText(transaction.rawText)
+            if (existingTransaction != null) {
+                android.util.Log.d("TransactionRepository", "🔄 Duplicate transaction found by raw text (existing: ${existingTransaction.id}), skipping insert")
+                return
+            }
+        }
+        
+        // Check by reference if available
         if (transaction.reference != null) {
-            val existingTransaction = transactionDao.findDuplicate(
+            existingTransaction = transactionDao.findDuplicate(
                 transaction.reference, 
                 transaction.date, 
                 transaction.amount
             )
-            
             if (existingTransaction != null) {
                 android.util.Log.d("TransactionRepository", "🔄 Duplicate transaction found with reference ${transaction.reference} (existing: ${existingTransaction.id}), skipping insert")
                 return
             }
-        } else {
-            android.util.Log.d("TransactionRepository", "No reference number, proceeding with insert")
+        }
+        
+        // Check by transaction details (date, amount, merchant, description)
+        existingTransaction = transactionDao.findDuplicateByDetails(
+            transaction.date,
+            transaction.amount,
+            transaction.merchant,
+            transaction.description
+        )
+        if (existingTransaction != null) {
+            android.util.Log.d("TransactionRepository", "🔄 Duplicate transaction found by details (existing: ${existingTransaction.id}), skipping insert")
+            return
         }
         
         val finalTransaction = if (transaction.categoryId == null && transaction.merchant != null) {
@@ -201,18 +222,41 @@ class TransactionRepository @Inject constructor(
             }
             
             // Process the transaction (merchant, categorization) and insert
-            // Check for duplicate transactions (only if reference exists)
+            // Check for duplicate transactions using multiple methods
+            var existingTransaction: Transaction? = null
+            
+            // First check by raw text (most reliable for SMS duplicates)
+            if (transaction.rawText != null) {
+                existingTransaction = transactionDao.findDuplicateByRawText(transaction.rawText)
+                if (existingTransaction != null) {
+                    android.util.Log.d("TransactionRepository", "🔄 Duplicate transaction found by raw text (existing: ${existingTransaction.id}), skipping insert")
+                    return@withTransaction
+                }
+            }
+            
+            // Check by reference if available
             if (transaction.reference != null) {
-                val existingTransaction = transactionDao.findDuplicate(
+                existingTransaction = transactionDao.findDuplicate(
                     transaction.reference, 
                     transaction.date, 
                     transaction.amount
                 )
-                
                 if (existingTransaction != null) {
                     android.util.Log.d("TransactionRepository", "🔄 Duplicate transaction found with reference ${transaction.reference} (existing: ${existingTransaction.id}), skipping insert")
                     return@withTransaction
                 }
+            }
+            
+            // Check by transaction details (date, amount, merchant, description)
+            existingTransaction = transactionDao.findDuplicateByDetails(
+                transaction.date,
+                transaction.amount,
+                transaction.merchant,
+                transaction.description
+            )
+            if (existingTransaction != null) {
+                android.util.Log.d("TransactionRepository", "🔄 Duplicate transaction found by details (existing: ${existingTransaction.id}), skipping insert")
+                return@withTransaction
             }
             
             val finalTransaction = if (transaction.categoryId == null && transaction.merchant != null) {

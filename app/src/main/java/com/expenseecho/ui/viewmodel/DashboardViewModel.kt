@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.expenseecho.data.repository.TransactionRepository
 import com.expenseecho.data.repository.CategoryRepository
 import com.expenseecho.data.repository.BudgetRepository
+import com.expenseecho.service.SmsReaderService
 import com.expenseecho.data.entity.Category
 import com.expenseecho.data.analytics.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,7 +28,8 @@ data class DashboardUiState(
     val monthlyAnalytics: MonthlyAnalytics? = null,
     val customGraphs: List<CustomGraphConfig> = emptyList(),
     val showAddGraphDialog: Boolean = false,
-    val transactionFilter: TransactionTypeFilter = TransactionTypeFilter.ALL_EXPENSES
+    val transactionFilter: TransactionTypeFilter = TransactionTypeFilter.ALL_EXPENSES,
+    val isRefreshing: Boolean = false
 )
 
 data class CategorySpending(
@@ -41,13 +43,15 @@ class DashboardViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val budgetRepository: BudgetRepository,
-    private val analyticsEngine: AnalyticsEngine
+    private val analyticsEngine: AnalyticsEngine,
+    private val smsReaderService: SmsReaderService
 ) : ViewModel() {
     
     private val _currentMonth = MutableStateFlow(YearMonth.now())
     private val _customGraphs = MutableStateFlow<List<CustomGraphConfig>>(emptyList())
     private val _showAddGraphDialog = MutableStateFlow(false)
     private val _transactionFilter = MutableStateFlow(TransactionTypeFilter.ALL_EXPENSES)
+    private val _isRefreshing = MutableStateFlow(false)
     
     val currentMonth: StateFlow<YearMonth> = _currentMonth.asStateFlow()
     
@@ -58,7 +62,8 @@ class DashboardViewModel @Inject constructor(
         _showAddGraphDialog,
         _transactionFilter
     ) { month, categories, customGraphs, showAddGraphDialog, transactionFilter ->
-        calculateDashboardData(month, categories, customGraphs, showAddGraphDialog, transactionFilter)
+        val isRefreshing = _isRefreshing.value
+        calculateDashboardData(month, categories, customGraphs, showAddGraphDialog, transactionFilter, isRefreshing)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -101,12 +106,31 @@ class DashboardViewModel @Inject constructor(
         _transactionFilter.value = filter
     }
     
+    fun refreshTransactions() {
+        viewModelScope.launch {
+            try {
+                _isRefreshing.value = true
+                android.util.Log.d("DashboardViewModel", "🔄 Manual refresh triggered")
+                // Refresh recent SMS messages
+                smsReaderService.refreshRecentTransactions()
+                // Trigger a refresh by updating the current month (this will recalculate all data)
+                val currentMonth = _currentMonth.value
+                _currentMonth.value = currentMonth
+            } catch (e: Exception) {
+                android.util.Log.e("DashboardViewModel", "Error refreshing transactions: ${e.message}", e)
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
+    }
+    
     private suspend fun calculateDashboardData(
         month: YearMonth,
         categories: List<Category>,
         customGraphs: List<CustomGraphConfig>,
         showAddGraphDialog: Boolean,
-        transactionFilter: TransactionTypeFilter
+        transactionFilter: TransactionTypeFilter,
+        isRefreshing: Boolean
     ): DashboardUiState {
         val startDate = month.atDay(1)
         val endDate = month.atEndOfMonth()
@@ -181,7 +205,8 @@ class DashboardViewModel @Inject constructor(
             monthlyAnalytics = monthlyAnalytics,
             customGraphs = customGraphs,
             showAddGraphDialog = showAddGraphDialog,
-            transactionFilter = transactionFilter
+            transactionFilter = transactionFilter,
+            isRefreshing = isRefreshing
         )
     }
 }

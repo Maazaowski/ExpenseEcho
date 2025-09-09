@@ -189,6 +189,19 @@ class SmsReaderService @Inject constructor(
     }
     
     /**
+     * Refresh recent transactions by checking for new SMS messages
+     * Only processes SMS from the last 2 days to avoid duplicates
+     */
+    suspend fun refreshRecentTransactions() {
+        try {
+            Log.d(TAG, "🔄 Refreshing recent transactions (last 2 days)...")
+            importRecentBankSms(days = 2)
+        } catch (e: Exception) {
+            Log.e(TAG, "💥 Error refreshing recent transactions: ${e.message}", e)
+        }
+    }
+    
+    /**
      * Process a single new SMS message (optimized)
      */
     fun processSingleSms(smsBody: String) {

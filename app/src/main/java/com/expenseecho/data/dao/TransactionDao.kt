@@ -32,6 +32,12 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE reference = :reference AND date = :date AND amount = :amount")
     suspend fun findDuplicate(reference: String?, date: LocalDate, amount: Long): Transaction?
     
+    @Query("SELECT * FROM transactions WHERE rawText = :rawText")
+    suspend fun findDuplicateByRawText(rawText: String): Transaction?
+    
+    @Query("SELECT * FROM transactions WHERE date = :date AND amount = :amount AND merchant = :merchant AND description = :description")
+    suspend fun findDuplicateByDetails(date: LocalDate, amount: Long, merchant: String?, description: String?): Transaction?
+    
     @Query("SELECT COUNT(*) FROM transactions")
     suspend fun getCount(): Int
     
