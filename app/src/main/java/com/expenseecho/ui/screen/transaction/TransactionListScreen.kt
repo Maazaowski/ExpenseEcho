@@ -122,10 +122,10 @@ private fun TransactionFilterChips(
     onFilterSelected: (TransactionFilter) -> Unit
 ) {
     val filters = listOf(
-        TransactionFilter.All to "All" to Icons.Default.List,
-        TransactionFilter.Income to "Income" to Icons.Default.TrendingUp,
-        TransactionFilter.Expense to "Expense" to Icons.Default.TrendingDown,
-        TransactionFilter.Transfer to "Transfer" to Icons.Default.SwapHoriz
+        Triple(TransactionFilter.All, "All", Icons.Default.List),
+        Triple(TransactionFilter.Income, "Income", Icons.Default.TrendingUp),
+        Triple(TransactionFilter.Expense, "Expense", Icons.Default.TrendingDown),
+        Triple(TransactionFilter.Transfer, "Transfer", Icons.Default.SwapHoriz)
     )
     
     Row(

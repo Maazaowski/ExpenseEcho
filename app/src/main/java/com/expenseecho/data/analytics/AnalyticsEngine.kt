@@ -106,9 +106,9 @@ class AnalyticsEngine @Inject constructor(
     ): List<CategoryAnalysis> {
         // Filter transactions based on the selected filter
         val spendingTransactions = when (transactionFilter) {
-            TransactionTypeFilter.ALL_EXPENSES -> transactions.filter { it.type == "Expense" }
+            TransactionTypeFilter.ALL_EXPENSES -> transactions.filter { it.type == "Expense" || it.type == "Transfer" }
             TransactionTypeFilter.PURCHASES_ONLY -> transactions.filter { it.type == "Expense" && it.paymentMethod == "Debit Card" }
-            TransactionTypeFilter.TRANSFERS_ONLY -> transactions.filter { it.type == "Expense" && it.paymentMethod == "Bank Transfer" }
+            TransactionTypeFilter.TRANSFERS_ONLY -> transactions.filter { it.type == "Transfer" || (it.type == "Expense" && it.paymentMethod == "Bank Transfer") }
         }
         val totalSpending = spendingTransactions.sumOf { it.amount }
         val results = mutableListOf<CategoryAnalysis>()
@@ -175,9 +175,9 @@ class AnalyticsEngine @Inject constructor(
             
             // Filter expenses based on transaction filter
             val expenses = when (transactionFilter) {
-                TransactionTypeFilter.ALL_EXPENSES -> weekTransactions.filter { it.type == "Expense" }.sumOf { it.amount }
+                TransactionTypeFilter.ALL_EXPENSES -> weekTransactions.filter { it.type == "Expense" || it.type == "Transfer" }.sumOf { it.amount }
                 TransactionTypeFilter.PURCHASES_ONLY -> weekTransactions.filter { it.type == "Expense" && it.paymentMethod == "Debit Card" }.sumOf { it.amount }
-                TransactionTypeFilter.TRANSFERS_ONLY -> weekTransactions.filter { it.type == "Expense" && it.paymentMethod == "Bank Transfer" }.sumOf { it.amount }
+                TransactionTypeFilter.TRANSFERS_ONLY -> weekTransactions.filter { it.type == "Transfer" || (it.type == "Expense" && it.paymentMethod == "Bank Transfer") }.sumOf { it.amount }
             }
             
             weeks.add(
@@ -203,9 +203,9 @@ class AnalyticsEngine @Inject constructor(
     ): List<MerchantAnalysis> {
         // Filter transactions based on the selected filter
         val filteredTransactions = when (transactionFilter) {
-            TransactionTypeFilter.ALL_EXPENSES -> transactions.filter { it.type == "Expense" }
+            TransactionTypeFilter.ALL_EXPENSES -> transactions.filter { it.type == "Expense" || it.type == "Transfer" }
             TransactionTypeFilter.PURCHASES_ONLY -> transactions.filter { it.type == "Expense" && it.paymentMethod == "Debit Card" }
-            TransactionTypeFilter.TRANSFERS_ONLY -> transactions.filter { it.type == "Expense" && it.paymentMethod == "Bank Transfer" }
+            TransactionTypeFilter.TRANSFERS_ONLY -> transactions.filter { it.type == "Transfer" || (it.type == "Expense" && it.paymentMethod == "Bank Transfer") }
         }
         
         val merchantMap = mutableMapOf<String, MutableList<Transaction>>()

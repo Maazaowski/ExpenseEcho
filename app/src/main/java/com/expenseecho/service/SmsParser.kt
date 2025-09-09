@@ -90,7 +90,7 @@ object SmsParser {
         
         val type = when {
             isReceived || isCredited -> "Income"
-            isSent || (isFundsTransfer && !isReceived && !isCredited) -> "Expense" // Transfer is a subcategory of Expense
+            isSent || (isFundsTransfer && !isReceived && !isCredited) -> "Transfer"
             isCharged -> "Expense"
             else -> "Expense" // default to expense if unclear
         }
