@@ -50,6 +50,13 @@
             </intent-filter>
         </receiver>
 
+        <!-- SMS Monitoring Service for real-time sync -->
+        <service
+            android:name=".service.SmsMonitoringService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <!-- WorkManager for backup operations -->
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"

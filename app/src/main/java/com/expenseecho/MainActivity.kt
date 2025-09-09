@@ -1,6 +1,7 @@
 package com.expenseecho
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -10,17 +11,32 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.expenseecho.service.SmsMonitoringService
 import com.expenseecho.ui.navigation.ExpenseEchoNavigation
 import com.expenseecho.ui.theme.ExpenseEchoTheme
+import com.expenseecho.ui.viewmodel.DashboardViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    
+    companion object {
+        private const val TAG = "MainActivity"
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // Start SMS monitoring service
+        SmsMonitoringService.startService(this)
+        Log.d(TAG, "🔄 Started SMS monitoring service")
+        
         setContent {
             ExpenseEchoTheme {
                 Surface(
@@ -31,5 +47,18 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "🔄 App resumed - triggering SMS sync")
+        // Trigger immediate sync when app comes to foreground
+        SmsMonitoringService.startService(this)
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        // Don't stop the service on destroy - let it run in background
+        Log.d(TAG, "🔄 MainActivity destroyed - keeping SMS monitoring service running")
     }
 }

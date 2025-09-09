@@ -34,7 +34,7 @@ class ExpenseEchoApplication : Application() {
             .setRequiresBatteryNotLow(true)
             .build()
         
-        val periodicSyncRequest = PeriodicWorkRequestBuilder<SmsSyncWorker>(15, TimeUnit.MINUTES)
+        val periodicSyncRequest = PeriodicWorkRequestBuilder<SmsSyncWorker>(5, TimeUnit.MINUTES)
             .setConstraints(constraints)
             .build()
         
@@ -44,7 +44,7 @@ class ExpenseEchoApplication : Application() {
             periodicSyncRequest
         )
         
-        Log.d("ExpenseEchoApplication", "🔄 Started periodic SMS sync (every 15 minutes)")
+        Log.d("ExpenseEchoApplication", "🔄 Started periodic SMS sync (every 5 minutes)")
     }
 }
 
