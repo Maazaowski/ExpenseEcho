@@ -33,10 +33,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
-        // Start SMS monitoring service
-        SmsMonitoringService.startService(this)
-        Log.d(TAG, "🔄 Started SMS monitoring service")
-        
         setContent {
             ExpenseEchoTheme {
                 Surface(
@@ -52,8 +48,14 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "🔄 App resumed - triggering SMS sync")
-        // Trigger immediate sync when app comes to foreground
-        SmsMonitoringService.startService(this)
+        // Try to start SMS monitoring service, but don't crash if it fails
+        try {
+            SmsMonitoringService.startService(this)
+            Log.d(TAG, "🔄 Started SMS monitoring service")
+        } catch (e: Exception) {
+            Log.e(TAG, "💥 Failed to start SMS monitoring service: ${e.message}")
+            // Fallback: rely on WorkManager and manual refresh
+        }
     }
     
     override fun onDestroy() {

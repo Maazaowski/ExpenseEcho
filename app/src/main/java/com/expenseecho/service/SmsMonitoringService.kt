@@ -55,9 +55,16 @@ class SmsMonitoringService : Service() {
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "🔄 SMS Monitoring Service started")
-        startForeground(NOTIFICATION_ID, createNotification())
-        startMonitoring()
-        return START_STICKY
+        try {
+            startForeground(NOTIFICATION_ID, createNotification())
+            startMonitoring()
+            return START_STICKY
+        } catch (e: Exception) {
+            Log.e(TAG, "💥 Error starting foreground service: ${e.message}", e)
+            // If foreground service fails, stop the service
+            stopSelf()
+            return START_NOT_STICKY
+        }
     }
     
     override fun onBind(intent: Intent?): IBinder? = null
