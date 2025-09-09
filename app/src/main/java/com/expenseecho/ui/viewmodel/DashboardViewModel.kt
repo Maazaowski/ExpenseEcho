@@ -26,7 +26,8 @@ data class DashboardUiState(
     val atAGlanceSummary: AtAGlanceSummary? = null,
     val monthlyAnalytics: MonthlyAnalytics? = null,
     val customGraphs: List<CustomGraphConfig> = emptyList(),
-    val showAddGraphDialog: Boolean = false
+    val showAddGraphDialog: Boolean = false,
+    val transactionFilter: TransactionTypeFilter = TransactionTypeFilter.ALL_EXPENSES
 )
 
 data class CategorySpending(
@@ -46,6 +47,7 @@ class DashboardViewModel @Inject constructor(
     private val _currentMonth = MutableStateFlow(YearMonth.now())
     private val _customGraphs = MutableStateFlow<List<CustomGraphConfig>>(emptyList())
     private val _showAddGraphDialog = MutableStateFlow(false)
+    private val _transactionFilter = MutableStateFlow(TransactionTypeFilter.ALL_EXPENSES)
     
     val currentMonth: StateFlow<YearMonth> = _currentMonth.asStateFlow()
     
@@ -53,9 +55,10 @@ class DashboardViewModel @Inject constructor(
         _currentMonth,
         categoryRepository.getAllCategories(),
         _customGraphs,
-        _showAddGraphDialog
-    ) { month, categories, customGraphs, showAddGraphDialog ->
-        calculateDashboardData(month, categories, customGraphs, showAddGraphDialog)
+        _showAddGraphDialog,
+        _transactionFilter
+    ) { month, categories, customGraphs, showAddGraphDialog, transactionFilter ->
+        calculateDashboardData(month, categories, customGraphs, showAddGraphDialog, transactionFilter)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -94,11 +97,16 @@ class DashboardViewModel @Inject constructor(
         _customGraphs.value = currentGraphs
     }
     
+    fun setTransactionFilter(filter: TransactionTypeFilter) {
+        _transactionFilter.value = filter
+    }
+    
     private suspend fun calculateDashboardData(
         month: YearMonth,
         categories: List<Category>,
         customGraphs: List<CustomGraphConfig>,
-        showAddGraphDialog: Boolean
+        showAddGraphDialog: Boolean,
+        transactionFilter: TransactionTypeFilter
     ): DashboardUiState {
         val startDate = month.atDay(1)
         val endDate = month.atEndOfMonth()
@@ -159,7 +167,7 @@ class DashboardViewModel @Inject constructor(
         
         // Get analytics data
         val atAGlanceSummary = analyticsEngine.getAtAGlanceSummary(month)
-        val monthlyAnalytics = analyticsEngine.getMonthlyAnalytics(month)
+        val monthlyAnalytics = analyticsEngine.getMonthlyAnalytics(month, transactionFilter)
         
         return DashboardUiState(
             totalIncome = totalIncome,
@@ -172,7 +180,8 @@ class DashboardViewModel @Inject constructor(
             atAGlanceSummary = atAGlanceSummary,
             monthlyAnalytics = monthlyAnalytics,
             customGraphs = customGraphs,
-            showAddGraphDialog = showAddGraphDialog
+            showAddGraphDialog = showAddGraphDialog,
+            transactionFilter = transactionFilter
         )
     }
 }

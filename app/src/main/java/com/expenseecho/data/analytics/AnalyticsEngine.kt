@@ -25,7 +25,7 @@ class AnalyticsEngine @Inject constructor(
     /**
      * Get comprehensive analytics for a given month
      */
-    suspend fun getMonthlyAnalytics(month: YearMonth): MonthlyAnalytics {
+    suspend fun getMonthlyAnalytics(month: YearMonth, transactionFilter: TransactionTypeFilter = TransactionTypeFilter.ALL_EXPENSES): MonthlyAnalytics {
         val startDate = month.atDay(1)
         val endDate = month.atEndOfMonth()
         
@@ -34,9 +34,9 @@ class AnalyticsEngine @Inject constructor(
         
         return MonthlyAnalytics(
             month = month,
-            categoryAnalysis = getCategoryAnalysis(transactions, categories),
-            trendData = getTrendData(month, transactions),
-            merchantAnalysis = getMerchantAnalysis(transactions, categories),
+            categoryAnalysis = getCategoryAnalysis(transactions, categories, transactionFilter),
+            trendData = getTrendData(month, transactions, transactionFilter),
+            merchantAnalysis = getMerchantAnalysis(transactions, categories, transactionFilter),
             monthlyComparison = getMonthlyComparison(month),
             spendingPatterns = getSpendingPatterns(transactions),
             budgetAnalysis = getBudgetAnalysis(month, categories)
@@ -101,10 +101,15 @@ class AnalyticsEngine @Inject constructor(
     
     private suspend fun getCategoryAnalysis(
         transactions: List<Transaction>,
-        categories: List<Category>
+        categories: List<Category>,
+        transactionFilter: TransactionTypeFilter = TransactionTypeFilter.ALL_EXPENSES
     ): List<CategoryAnalysis> {
-        // All Expense transactions (including transfers) are now treated as spending
-        val spendingTransactions = transactions.filter { it.type == "Expense" }
+        // Filter transactions based on the selected filter
+        val spendingTransactions = when (transactionFilter) {
+            TransactionTypeFilter.ALL_EXPENSES -> transactions.filter { it.type == "Expense" }
+            TransactionTypeFilter.PURCHASES_ONLY -> transactions.filter { it.type == "Expense" && it.paymentMethod == "Debit Card" }
+            TransactionTypeFilter.TRANSFERS_ONLY -> transactions.filter { it.type == "Expense" && it.paymentMethod == "Bank Transfer" }
+        }
         val totalSpending = spendingTransactions.sumOf { it.amount }
         val results = mutableListOf<CategoryAnalysis>()
         
@@ -154,7 +159,7 @@ class AnalyticsEngine @Inject constructor(
         return results.sortedByDescending { it.amount }
     }
     
-    private suspend fun getTrendData(month: YearMonth, transactions: List<Transaction>): List<TrendData> {
+    private suspend fun getTrendData(month: YearMonth, transactions: List<Transaction>, transactionFilter: TransactionTypeFilter = TransactionTypeFilter.ALL_EXPENSES): List<TrendData> {
         val weeks = mutableListOf<TrendData>()
         val startDate = month.atDay(1)
         val endDate = month.atEndOfMonth()
@@ -167,7 +172,13 @@ class AnalyticsEngine @Inject constructor(
             
             val weekTransactions = transactionRepository.getTransactionsByDateRange(currentDate, weekEnd).first()
             val income = weekTransactions.filter { it.type == "Income" }.sumOf { it.amount }
-            val expenses = weekTransactions.filter { it.type == "Expense" }.sumOf { it.amount }
+            
+            // Filter expenses based on transaction filter
+            val expenses = when (transactionFilter) {
+                TransactionTypeFilter.ALL_EXPENSES -> weekTransactions.filter { it.type == "Expense" }.sumOf { it.amount }
+                TransactionTypeFilter.PURCHASES_ONLY -> weekTransactions.filter { it.type == "Expense" && it.paymentMethod == "Debit Card" }.sumOf { it.amount }
+                TransactionTypeFilter.TRANSFERS_ONLY -> weekTransactions.filter { it.type == "Expense" && it.paymentMethod == "Bank Transfer" }.sumOf { it.amount }
+            }
             
             weeks.add(
                 TrendData(
@@ -187,11 +198,19 @@ class AnalyticsEngine @Inject constructor(
     
     private suspend fun getMerchantAnalysis(
         transactions: List<Transaction>,
-        categories: List<Category>
+        categories: List<Category>,
+        transactionFilter: TransactionTypeFilter = TransactionTypeFilter.ALL_EXPENSES
     ): List<MerchantAnalysis> {
+        // Filter transactions based on the selected filter
+        val filteredTransactions = when (transactionFilter) {
+            TransactionTypeFilter.ALL_EXPENSES -> transactions.filter { it.type == "Expense" }
+            TransactionTypeFilter.PURCHASES_ONLY -> transactions.filter { it.type == "Expense" && it.paymentMethod == "Debit Card" }
+            TransactionTypeFilter.TRANSFERS_ONLY -> transactions.filter { it.type == "Expense" && it.paymentMethod == "Bank Transfer" }
+        }
+        
         val merchantMap = mutableMapOf<String, MutableList<Transaction>>()
         
-        transactions.forEach { transaction ->
+        filteredTransactions.forEach { transaction ->
             transaction.merchant?.let { merchant ->
                 merchantMap.getOrPut(merchant) { mutableListOf() }.add(transaction)
             }

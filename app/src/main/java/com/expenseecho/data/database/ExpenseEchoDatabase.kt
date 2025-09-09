@@ -23,7 +23,7 @@ import net.sqlcipher.database.SupportFactory
         Rule::class,
         Merchant::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(DateConverters::class)
@@ -66,6 +66,14 @@ abstract class ExpenseEchoDatabase : RoomDatabase() {
             }
         }
         
+        // Migration from version 2 to 3 - updates Transfer transactions to Expense
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Update all Transfer transactions to Expense
+                database.execSQL("UPDATE transactions SET type = 'Expense' WHERE type = 'Transfer'")
+            }
+        }
+        
         fun getDatabase(context: Context, passphrase: String): ExpenseEchoDatabase {
             return INSTANCE ?: synchronized(this) {
                 val factory = SupportFactory(SQLiteDatabase.getBytes(passphrase.toCharArray()))
@@ -77,7 +85,7 @@ abstract class ExpenseEchoDatabase : RoomDatabase() {
                 )
                     .openHelperFactory(factory)
                     .addCallback(DatabaseCallback())
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                 
                 INSTANCE = instance

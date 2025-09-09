@@ -44,11 +44,11 @@ fun DashboardScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                MonthSelector(
-                    currentMonth = uiState.currentMonth,
-                    onPreviousMonth = viewModel::goToPreviousMonth,
-                    onNextMonth = viewModel::goToNextMonth
-                )
+            MonthSelector(
+                currentMonth = uiState.currentMonth,
+                onPreviousMonth = viewModel::goToPreviousMonth,
+                onNextMonth = viewModel::goToNextMonth
+            )
                 
                 IconButton(
                     onClick = { viewModel.showAddGraphDialog() }
@@ -59,6 +59,14 @@ fun DashboardScreen(
                     )
                 }
             }
+        }
+        
+        // Transaction type filter chips
+        item {
+            TransactionFilterChips(
+                selectedFilter = uiState.transactionFilter,
+                onFilterSelected = viewModel::setTransactionFilter
+            )
         }
         
         // At-a-glance summary
@@ -88,35 +96,29 @@ fun DashboardScreen(
         }
         
         // Category spending pie chart
-        if (uiState.categorySpending.isNotEmpty()) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
+        uiState.monthlyAnalytics?.categoryAnalysis?.let { categoryAnalysis ->
+            if (categoryAnalysis.isNotEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(
-                            text = "Spending by Category",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        PieChart(
-                            data = uiState.categorySpending.map { categorySpending ->
-                                CategoryAnalysis(
-                                    category = categorySpending.category,
-                                    amount = categorySpending.amount,
-                                    percentage = categorySpending.percentage,
-                                    transactionCount = 0, // Will be calculated by analytics engine
-                                    averageTransaction = 0L // Will be calculated by analytics engine
-                                )
-                            }.take(8),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(300.dp)
-                        )
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Text(
+                                text = "Spending by Category",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            PieChart(
+                                data = categoryAnalysis.take(8),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -137,6 +139,10 @@ fun DashboardScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Calculate filtered expenses from analytics data
+                    val filteredExpenses = uiState.monthlyAnalytics?.categoryAnalysis?.sumOf { it.amount } ?: 0L
+                    
                     HorizontalBarChart(
                         data = listOf(
                             MerchantAnalysis(
@@ -147,8 +153,12 @@ fun DashboardScreen(
                                 lastTransactionDate = java.time.LocalDate.now()
                             ),
                             MerchantAnalysis(
-                                merchantName = "Expenses",
-                                totalAmount = uiState.totalExpenses,
+                                merchantName = when (uiState.transactionFilter) {
+                                    TransactionTypeFilter.ALL_EXPENSES -> "All Expenses"
+                                    TransactionTypeFilter.PURCHASES_ONLY -> "Purchases Only"
+                                    TransactionTypeFilter.TRANSFERS_ONLY -> "Transfers Only"
+                                },
+                                totalAmount = filteredExpenses,
                                 transactionCount = 0,
                                 category = null,
                                 lastTransactionDate = java.time.LocalDate.now()
@@ -163,61 +173,63 @@ fun DashboardScreen(
         }
         
         // Category breakdown table
-        if (uiState.categorySpending.isNotEmpty()) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
+        uiState.monthlyAnalytics?.categoryAnalysis?.let { categoryAnalysis ->
+            if (categoryAnalysis.isNotEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(
-                            text = "Category Breakdown",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        uiState.categorySpending.take(5).forEach { categorySpending ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Text(
+                                text = "Category Breakdown",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            categoryAnalysis.take(5).forEach { categoryAnalysisItem ->
                                 Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(12.dp)
-                                            .background(
-                                                color = Color(android.graphics.Color.parseColor(categorySpending.category.color)),
-                                                shape = RoundedCornerShape(2.dp)
-                                            )
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = categorySpending.category.name,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
-                                
-                                Column(
-                                    horizontalAlignment = Alignment.End
-                                ) {
-                                    Text(
-                                        text = formatCurrency(categorySpending.amount),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        text = "${categorySpending.percentage.toInt()}%",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(12.dp)
+                                                .background(
+                                                    color = Color(android.graphics.Color.parseColor(categoryAnalysisItem.category.color)),
+                                                    shape = RoundedCornerShape(2.dp)
+                                                )
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = categoryAnalysisItem.category.name,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                    
+                                    Column(
+                                        horizontalAlignment = Alignment.End
+                                    ) {
+                                        Text(
+                                            text = formatCurrency(categoryAnalysisItem.amount),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Text(
+                                            text = "${categoryAnalysisItem.percentage.toInt()}%",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -716,6 +728,33 @@ private fun SummaryCard(
                 fontWeight = FontWeight.Bold,
                 color = color,
                 textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TransactionFilterChips(
+    selectedFilter: TransactionTypeFilter,
+    onFilterSelected: (TransactionTypeFilter) -> Unit
+) {
+    val filters = listOf(
+        TransactionTypeFilter.ALL_EXPENSES to "All Expenses",
+        TransactionTypeFilter.PURCHASES_ONLY to "Purchases Only", 
+        TransactionTypeFilter.TRANSFERS_ONLY to "Transfers Only"
+    )
+    
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        filters.forEach { (filter, label) ->
+            FilterChip(
+                onClick = { onFilterSelected(filter) },
+                label = { Text(label) },
+                selected = selectedFilter == filter,
+                modifier = Modifier.weight(1f)
             )
         }
     }

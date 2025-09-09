@@ -116,6 +116,15 @@ enum class DataSource {
 }
 
 /**
+ * Transaction type filter for analytics
+ */
+enum class TransactionTypeFilter {
+    ALL_EXPENSES,      // All money going out (purchases + transfers)
+    PURCHASES_ONLY,    // Only actual purchases (not transfers)
+    TRANSFERS_ONLY     // Only transfers (money moving between accounts)
+}
+
+/**
  * Pre-defined dashboard widgets
  */
 enum class PredefinedWidget {
