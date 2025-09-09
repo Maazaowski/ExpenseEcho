@@ -122,4 +122,30 @@ class SettingsViewModel @Inject constructor(
     fun clearImportMessage() {
         _uiState.value = _uiState.value.copy(importMessage = "")
     }
+    
+    fun clearAllData() {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(
+                    isImporting = true,
+                    importMessage = "Clearing all data..."
+                )
+                
+                // Delete all transactions and merchants
+                transactionRepository.deleteAllTransactions()
+                merchantRepository.deleteAllMerchants()
+                
+                _uiState.value = _uiState.value.copy(
+                    isImporting = false,
+                    importMessage = "All data cleared successfully",
+                    dbStats = "DB: 0 transactions, 0 merchants"
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isImporting = false,
+                    importMessage = "Error clearing data: ${e.message}"
+                )
+            }
+        }
+    }
 }

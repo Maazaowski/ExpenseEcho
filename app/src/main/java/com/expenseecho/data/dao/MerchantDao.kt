@@ -43,6 +43,9 @@ interface MerchantDao {
     @Query("DELETE FROM merchants WHERE id = :id")
     suspend fun deleteById(id: String)
     
+    @Query("DELETE FROM merchants")
+    suspend fun deleteAll()
+    
     @Query("UPDATE merchants SET categoryId = :categoryId, updatedAt = :updatedAt WHERE id = :id")
     suspend fun updateCategory(id: String, categoryId: String?, updatedAt: Long)
     

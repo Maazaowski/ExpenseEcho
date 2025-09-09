@@ -134,6 +134,10 @@ class TransactionRepository @Inject constructor(
         transactionDao.deleteById(id)
     }
     
+    suspend fun deleteAllTransactions() {
+        transactionDao.deleteAll()
+    }
+    
     private suspend fun classifyCategory(merchant: String?, description: String?): String? {
         val searchText = listOfNotNull(merchant, description)
             .joinToString(" ")

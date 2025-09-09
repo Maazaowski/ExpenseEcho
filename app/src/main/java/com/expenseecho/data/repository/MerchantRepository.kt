@@ -40,6 +40,10 @@ class MerchantRepository @Inject constructor(
         merchantDao.delete(merchant)
     }
     
+    suspend fun deleteAllMerchants() {
+        merchantDao.deleteAll()
+    }
+    
     suspend fun updateMerchantCategory(merchantId: String, categoryId: String?) {
         merchantDao.updateCategory(merchantId, categoryId, System.currentTimeMillis())
     }
