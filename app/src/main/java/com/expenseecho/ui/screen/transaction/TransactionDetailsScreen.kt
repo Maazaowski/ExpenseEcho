@@ -1,6 +1,8 @@
 package com.expenseecho.ui.screen.transaction
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -392,27 +394,29 @@ private fun CategorySelectionDialog(
         onDismissRequest = onDismiss,
         title = { Text("Select Category") },
         text = {
-            Column {
+            LazyColumn {
                 // Uncategorized option
-                TextButton(
-                    onClick = { onCategorySelected(null) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                item {
+                    TextButton(
+                        onClick = { onCategorySelected(null) },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        RadioButton(
-                            selected = selectedCategoryId == null,
-                            onClick = { onCategorySelected(null) }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Uncategorized")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedCategoryId == null,
+                                onClick = { onCategorySelected(null) }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Uncategorized")
+                        }
                     }
                 }
                 
                 // Category options
-                categories.filter { it.isBudgetable }.forEach { category ->
+                items(categories.filter { it.isBudgetable }) { category ->
                     TextButton(
                         onClick = { onCategorySelected(category.id) },
                         modifier = Modifier.fillMaxWidth()
